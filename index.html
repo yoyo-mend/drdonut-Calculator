@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kelp & Spawner Calculator</title>
+
+<style>
+body {
+  background:#0f172a;
+  color:#e5e7eb;
+  font-family:Arial,sans-serif;
+  padding:30px;
+}
+h1 { color:#22c55e; }
+input {
+  padding:8px;
+  width:220px;
+  font-size:16px;
+  margin-bottom:10px;
+}
+button {
+  padding:10px 15px;
+  background:#22c55e;
+  border:none;
+  cursor:pointer;
+  font-size:16px;
+}
+.box {
+  margin-top:15px;
+  padding:15px;
+  background:#020617;
+  border-radius:8px;
+}
+</style>
+</head>
+<body>
+
+<h1>🌿 Dried Kelp Block Calculator</h1>
+
+<label>Bones spent:</label><br>
+<input id="bones" type="text" placeholder="e.g. 100k, 1m"><br>
+
+<label>Farm columns:</label><br>
+<input id="farmSize" type="text" value="10"><br>
+
+<label>Bone cost:</label><br>
+<input id="boneCost" type="text" value="118"><br>
+
+<label>Blaze rod cost:</label><br>
+<input id="blazeCost" type="text" value="150"><br>
+
+<label>Dried kelp block price:</label><br>
+<input id="kelpPrice" type="text" value="750"><br>
+
+<label>Farm speed factor (auto if empty):</label><br>
+<input id="speedFactor" type="text"><br>
+
+<button onclick="calculateKelp()">Calculate Kelp</button>
+
+<div class="box" id="kelpOutput"></div>
+
+<hr><br>
+
+<h1>💀 Skeleton Spawner Calculator (DrDonut SMP)</h1>
+
+<label>Number of spawners:</label><br>
+<input id="spawnerCount" type="text" placeholder="e.g. 5"><br>
+
+<label>Bones you want (optional):</label><br>
+<input id="targetBones" type="text" placeholder="e.g. 1m"><br>
+
+<label>Money you have (optional):</label><br>
+<input id="moneyHave" type="text" placeholder="e.g. 50m"><br>
+
+<label>Bone price:</label><br>
+<input id="bonePrice" type="text" value="118"><br>
+
+<label>Spawner price:</label><br>
+<input id="spawnerPrice" type="text" value="1350000" placeholder="e.g. 1.35m"><br>
+
+<button onclick="calculateSpawner()">Calculate Spawner</button>
+
+<div class="box" id="spawnerOutput"></div>
+
+<script>
+// ---------- helpers ----------
+function parseInput(v){
+  if(!v) return 0;
+  v=v.toLowerCase().trim();
+  if(v.endsWith("k")) return parseFloat(v)*1e3;
+  if(v.endsWith("m")) return parseFloat(v)*1e6;
+  if(v.endsWith("b")) return parseFloat(v)*1e9;
+  return parseFloat(v);
+}
+function formatNumber(n){
+  if(n>=1e9) return (n/1e9).toFixed(2)+"b";
+  if(n>=1e6) return (n/1e6).toFixed(2)+"m";
+  if(n>=1e3) return (n/1e3).toFixed(2)+"k";
+  return Math.round(n).toString();
+}
+function formatTime(sec){
+  const h=Math.floor(sec/3600);
+  const m=Math.floor((sec%3600)/60);
+  return `${h}h ${m}m`;
+}
+
+// ---------- KELP ----------
+function calculateKelp(){
+  const bones=parseInput(document.getElementById("bones").value);
+  const cols=parseInput(document.getElementById("farmSize").value);
+  const boneCost=parseInput(document.getElementById("boneCost").value);
+  const blazeCost=parseInput(document.getElementById("blazeCost").value);
+  const kelpPrice=parseInput(document.getElementById("kelpPrice").value);
+  let speed=parseInput(document.getElementById("speedFactor").value);
+
+  if(!bones || bones<=0){
+    document.getElementById("kelpOutput").innerHTML="Enter valid bones amount.";
+    return;
+  }
+
+  if(!speed){
+    const knownBones=1020000;
+    const knownCols=60;
+    const knownHours=4;
+    speed=(20*knownCols*(knownHours*3600))/(knownBones*3);
+  }
+
+  const kelpProduced = bones * 3;
+  const driedBlocks = Math.floor(kelpProduced / 9);
+  const blazeRods = Math.ceil(kelpProduced / 12);
+
+  const kelpPerSecond = (20*cols)/speed;
+  const runtime = formatTime(kelpProduced/kelpPerSecond);
+
+  const totalCost = bones*boneCost + blazeRods*blazeCost;
+  const revenue = driedBlocks * kelpPrice;
+  const profit = revenue - totalCost;
+
+  document.getElementById("kelpOutput").innerHTML=`
+<b>Kelp grown:</b> ${formatNumber(kelpProduced)}<br>
+<b>Dried kelp blocks:</b> ${formatNumber(driedBlocks)}<br>
+<b>Blaze rods needed:</b> ${formatNumber(blazeRods)}<br>
+<b>Farm runtime:</b> ${runtime}<br><br>
+<b>Total cost:</b> ${formatNumber(totalCost)}<br>
+<b>Revenue:</b> ${formatNumber(revenue)}<br>
+<b>Profit:</b> ${formatNumber(profit)}
+`;
+}
+
+// ---------- SPAWNER ----------
+function calculateSpawner(){
+  const spawners = parseInput(document.getElementById("spawnerCount").value);
+  const target = parseInput(document.getElementById("targetBones").value);
+  const money = parseInput(document.getElementById("moneyHave").value);
+  const spawnerPrice = parseInput(document.getElementById("spawnerPrice").value) || 1350000;
+  const bonePrice = parseInput(document.getElementById("bonePrice").value) || 118;
+
+  if(spawners <= 0){
+    document.getElementById("spawnerOutput").innerHTML = "Enter spawner count.";
+    return;
+  }
+
+  const bonesPerMinutePerSpawner = 1.6;
+  const bonesPerHour = bonesPerMinutePerSpawner * 60 * spawners;
+
+  const storagePerSpawner = 1728;
+  const totalStorage = storagePerSpawner * spawners;
+
+  const hours = target ? target / bonesPerHour : 1;
+  const totalBones = bonesPerHour * hours;
+  const fill = Math.min((totalBones / totalStorage) * 100, 100);
+
+  const buyable = money ? Math.floor(money / spawnerPrice) : 0;
+
+  // Time to recover investment
+  const totalInvestment = spawnerPrice * spawners;
+  const coinsPerHour = bonesPerHour * bonePrice;
+  const timeToRecover = coinsPerHour > 0 ? formatTime(totalInvestment / coinsPerHour * 3600) : "N/A";
+
+  document.getElementById("spawnerOutput").innerHTML = `
+<b>Bones per hour (1.6 per spawner/min):</b> ${formatNumber(bonesPerHour)}<br>
+<b>Runtime:</b> ${target ? formatTime(hours*3600) : "1h"}<br>
+<b>Storage filled:</b> ${fill.toFixed(1)}%<br><br>
+<b>Spawner price:</b> ${formatNumber(spawnerPrice)}<br>
+<b>Spawners you can buy:</b> ${formatNumber(buyable)}<br>
+<b>Time to recover investment:</b> ${timeToRecover}
+`;
+}
+</script>
+
+</body>
+</html>
