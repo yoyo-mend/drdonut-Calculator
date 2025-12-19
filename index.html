@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Farm Calculators</title>
+<style>
+body {
+  background:#0f172a;
+  color:#e5e7eb;
+  font-family:Arial;
+  padding:30px;
+}
+h1 { color:#22c55e; }
+input, select {
+  padding:8px;
+  width:220px;
+  margin-bottom:10px;
+}
+button {
+  padding:10px 15px;
+  background:#22c55e;
+  border:none;
+  cursor:pointer;
+}
+.box {
+  margin-top:20px;
+  padding:15px;
+  background:#020617;
+  border-radius:8px;
+}
+.top-right {
+  position:absolute;
+  top:30px;
+  right:30px;
+}
+</style>
+</head>
+<body>
+
+<div class="top-right">
+<select id="mode" onchange="switchMode()">
+  <option value="kelp">🌿 Kelp Calculator</option>
+  <option value="spawner">🧱 Spawner Calculator</option>
+</select>
+</div>
+
+<h1 id="title">🌿 Dried Kelp Block Calculator</h1>
+
+<div id="kelpCalc">
+  <input id="bones" placeholder="Bones (e.g. 1m)"><br>
+  <input id="farmSize" value="10" placeholder="Columns"><br>
+  <input id="boneCost" value="118" placeholder="Bone cost"><br>
+  <input id="blazeCost" value="150" placeholder="Blaze rod cost"><br>
+  <input id="kelpPrice" value="750" placeholder="Kelp block price"><br>
+  <input id="speedFactor" placeholder="Speed factor (auto)"><br>
+  <button onclick="calculateKelp()">Calculate</button>
+</div>
+
+<div id="spawnerCalc" style="display:none;">
+  <input id="budget" placeholder="Money you can spend"><br>
+  <input id="spawnerPrice" placeholder="Price per spawner"><br>
+  <button onclick="calculateSpawner()">Calculate</button>
+</div>
+
+<div class="box" id="output"></div>
+
+<script>
+function parseInput(v){
+  if(!v) return 0;
+  v=v.toLowerCase().trim();
+  if(v.endsWith("k")) return parseFloat(v)*1e3;
+  if(v.endsWith("m")) return parseFloat(v)*1e6;
+  if(v.endsWith("b")) return parseFloat(v)*1e9;
+  return parseFloat(v);
+}
+
+function format(n){
+  if(n>=1e9) return (n/1e9).toFixed(2)+"b";
+  if(n>=1e6) return (n/1e6).toFixed(2)+"m";
+  if(n>=1e3) return (n/1e3).toFixed(2)+"k";
+  return Math.floor(n);
+}
+
+function switchMode(){
+  const m=document.getElementById("mode").value;
+  kelpCalc.style.display = m==="kelp"?"block":"none";
+  spawnerCalc.style.display = m==="spawner"?"block":"none";
+  title.innerText = m==="kelp"
+    ?"🌿 Dried Kelp Block Calculator"
+    :"🧱 Spawner Calculator";
+  output.innerHTML="";
+}
+
+function calculateKelp(){
+  const bones=parseInput(bonesInput=bones.value);
+  const cols=parseInput(farmSize.value);
+  const boneC=parseInput(boneCost.value);
+  const blazeC=parseInput(blazeCost.value);
+  const price=parseInput(kelpPrice.value);
+  let speed=parseInput(speedFactor.value);
+
+  if(!speed){
+    speed=(20*60*(4*3600))/(1020000*3);
+  }
+
+  const kelp=bones*3;
+  const blocks=Math.floor(kelp/9);
+  const rods=kelp/12;
+  const kps=(20*cols)/speed;
+  const seconds=kelp/kps;
+
+  const cost=bones*boneC+Math.ceil(rods)*blazeC;
+  const revenue=blocks*price;
+
+  output.innerHTML=`
+<b>Kelp:</b> ${format(kelp)}<br>
+<b>Dried blocks:</b> ${format(blocks)}<br>
+<b>Blaze rods:</b> ${format(rods)}<br>
+<b>Time:</b> ${(seconds/3600).toFixed(2)}h<br><br>
+<b>Cost:</b> ${format(cost)}<br>
+<b>Revenue:</b> ${format(revenue)}<br>
+<b>Profit:</b> ${format(revenue-cost)}
+`;
+}
+
+function calculateSpawner(){
+  const money=parseInput(budget.value);
+  const price=parseInput(spawnerPrice.value);
+  if(money<=0||price<=0){
+    output.innerHTML="Invalid input";
+    return;
+  }
+  const count=Math.floor(money/price);
+  const left=money-count*price;
+
+  output.innerHTML=`
+<b>Spawners:</b> ${count}<br>
+<b>Money left:</b> ${format(left)}
+`;
+}
+</script>
+
+</body>
+</html>
