@@ -40,7 +40,7 @@ button {
 <label>Bones spent:</label><br>
 <input id="bones" type="text" placeholder="e.g. 100k, 1m"><br>
 
-<label>Farm columns:</label><br>
+<label>Farm dispensers:</label><br>
 <input id="farmSize" type="text" value="10"><br>
 
 <label>Bone cost:</label><br>
@@ -76,7 +76,7 @@ button {
 <input id="bonePrice" type="text" value="118"><br>
 
 <label>Spawner price:</label><br>
-<input id="spawnerPrice" type="text" value="1350000" placeholder="e.g. 1.35m"><br>
+<input id="spawnerPrice" type="text" value="1350000"><br>
 
 <button onclick="calculateSpawner()">Calculate Spawner</button>
 
@@ -160,7 +160,7 @@ function calculateSpawner(){
     return;
   }
 
-  const bonesPerMinutePerSpawner = 1.6;
+  const bonesPerMinutePerSpawner = 2;
   const bonesPerHour = bonesPerMinutePerSpawner * 60 * spawners;
 
   const storagePerSpawner = 1728;
@@ -172,13 +172,14 @@ function calculateSpawner(){
 
   const buyable = money ? Math.floor(money / spawnerPrice) : 0;
 
-  // Time to recover investment
   const totalInvestment = spawnerPrice * spawners;
   const coinsPerHour = bonesPerHour * bonePrice;
-  const timeToRecover = coinsPerHour > 0 ? formatTime(totalInvestment / coinsPerHour * 3600) : "N/A";
+  const timeToRecover = coinsPerHour > 0
+    ? formatTime(totalInvestment / coinsPerHour * 3600)
+    : "N/A";
 
   document.getElementById("spawnerOutput").innerHTML = `
-<b>Bones per hour (1.6 per spawner/min):</b> ${formatNumber(bonesPerHour)}<br>
+<b>Bones per hour (2 per spawner/min):</b> ${formatNumber(bonesPerHour)}<br>
 <b>Runtime:</b> ${target ? formatTime(hours*3600) : "1h"}<br>
 <b>Storage filled:</b> ${fill.toFixed(1)}%<br><br>
 <b>Spawner price:</b> ${formatNumber(spawnerPrice)}<br>
